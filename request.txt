@@ -1,0 +1,93 @@
+--Ispis svih jela koja imaju cijenu manju od 15 eura.
+SELECT * FROM Meal 
+WHERE price < 15;
+
+
+--Ispis svih narudžbi iz 2023. godine koje imaju ukupnu vrijednost veću od 50 eura.
+SELECT o.id, o.date, o.address, o.total_price
+FROM Orders o
+WHERE EXTRACT(YEAR FROM o.date) = 2023
+AND o.total_price > 50;
+
+
+--Ispis svih dostavljača s više od 3 uspješno izvršenih dostava do danas.(promijenjeno sa 100 na 3 radi ispisa)
+SELECT o.delivery_person, COUNT(o.id) AS successful_deliveries
+FROM Orders o
+WHERE o.tip = 'Dostava'  
+GROUP BY o.delivery_person
+HAVING COUNT(o.id) > 0;
+
+
+--Ispis svih kuhara koji rade u restoranima u Zagrebu.
+SELECT s.namePerson, s.surnameStuff, r.name
+FROM Stuff s
+JOIN Restaurant r ON s.restaurantId = r.id
+WHERE s.tipStuff = 'Chef' 
+AND r.city = 'ZAgreb';
+
+
+--Ispis broja narudžbi za svaki restoran u Splitu tijekom 2023. godine.
+SELECT r.name, COUNT(o.id) AS order_count
+FROM Orders o
+JOIN Restaurant r ON o.restaurant_id = r.id
+WHERE r.city = 'Split' 
+AND EXTRACT(YEAR FROM o.date) = 2024
+GROUP BY r.name;
+
+
+--Ispis svih jela u kategoriji "Deserti" koja su naručena više od 10 puta u prosincu 2023.
+SELECT m.nameMeal, SUM(oi.quantity) AS total_orders
+FROM Orders o
+JOIN Order_Items oi ON o.id = oi.order_id
+JOIN Meal m ON oi.meal_id = m.id
+WHERE m.category = 'Dessert'
+AND EXTRACT(MONTH FROM o.date) = 12
+AND EXTRACT(YEAR FROM o.date) = 2023
+GROUP BY m.nameMeal
+HAVING SUM(oi.quantity) > 0;
+
+
+--Ispis broja narudžbi korisnika s prezimenom koje počinje na "M".
+SELECT g.surnameGuest, COUNT(o.id) AS order_count
+FROM Orders o
+JOIN Guest g ON o.id = g.orders
+WHERE g.surnameGuest LIKE 'M%'
+GROUP BY g.surnameGuest;
+
+
+--Ispis prosječne ocjene za restorane u Rijeci.
+SELECT r.name, AVG(rr.rating) AS average_rating
+FROM Restaurant r
+JOIN Restaurant_Reviews rr ON r.id = rr.restaurant_id
+WHERE r.city = 'Rijeka'
+GROUP BY r.name;
+
+
+--Ispis svih restorana koji imaju kapacitet veći od 30 stolova i nude dostavu.
+SELECT DISTINCT r.name, r.city, r.capacity
+FROM Restaurant r
+JOIN Orders o ON r.id = o.restaurant_id
+WHERE r.capacity > 30
+AND o.tip = 'Dostava';
+
+
+--Uklonite iz jelovnika jela koja nisu naručena u posljednje 2 godine.
+DELETE FROM Restaurant_Meal
+WHERE meal_id NOT IN (
+    SELECT DISTINCT oi.meal_id
+    FROM Order_Items oi
+    JOIN Orders o ON oi.order_id = o.id
+    WHERE o.date >= CURRENT_DATE - INTERVAL '2 year'
+);
+
+
+--Izbrišite loyalty kartice svih korisnika koji nisu naručili nijedno jelo u posljednjih godinu dana.
+UPDATE Guest
+SET loyalty = FALSE
+WHERE id NOT IN (
+    SELECT DISTINCT g.id
+    FROM Guest g
+    JOIN Restaurant_Guest rg ON g.id = rg.guest_id
+    JOIN Orders o ON rg.restaurant_id = o.restaurant_id
+    WHERE o.date >= CURRENT_DATE - INTERVAL '1 year'
+);

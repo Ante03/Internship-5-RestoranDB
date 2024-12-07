@@ -1,0 +1,127 @@
+CREATE TABLE Restaurant (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    city VARCHAR(255) NOT NULL,
+    working_hours VARCHAR(255) NOT NULL,
+    capacity INT NOT NULL,
+    delivery BOOL NOT NULL
+);
+
+CREATE TABLE Meal (
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        nameMeal VARCHAR(255) NOT NULL,
+	category VARCHAR(255) NOT NULL,
+	price INT NOT NULL,
+	calories INT NOT NULL
+);
+
+
+CREATE TABLE Orders (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    date DATE NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    tip VARCHAR(25) NOT NULL,
+    restaurant_id INT NOT NULL,
+    stuff_id INT NOT NULL,
+    delivery_time TIME NOT NULL,
+    note TEXT,
+    FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id) ON DELETE CASCADE,
+    FOREIGN KEY (stuff_id) REFERENCES Stuff(id) ON DELETE CASCADE
+);
+
+ALTER TABLE Orders
+ADD COLUMN total_price INT;
+
+UPDATE Orders o
+SET total_price = (
+    SELECT SUM(m.price * oi.quantity)
+    FROM Order_Items oi
+    JOIN Meal m ON oi.meal_id = m.id
+    WHERE oi.order_id = o.id
+)
+WHERE EXISTS (
+    SELECT 1
+    FROM Order_Items oi
+    WHERE oi.order_id = o.id
+);
+
+
+CREATE TABLE Stuff(
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        namePerson VARCHAR(25) NOT NULL,
+	surnameStuff VARCHAR(25) NOT NULL,
+	tipStuff VARCHAR(25) NOT NULL,
+	years int NOT NULL,
+	driving BOOL NOT NULL,
+	restaurantId INT REFERENCES Restaurant(id)
+);
+ALTER TABLE Stuff
+ADD CONSTRAINT check_years CHECK (years >= 18);
+ALTER TABLE Stuff
+ADD CONSTRAINT check_driving_license
+CHECK (
+    (tipStuff = 'Dostavljač' AND driving = TRUE) OR
+    (tipStuff != 'Dostavljač')
+);
+
+
+CREATE TABLE Order_Items (
+    order_id INT,
+    meal_id INT,
+    quantity INT,
+    FOREIGN KEY (order_id) REFERENCES Orders(id),
+    FOREIGN KEY (meal_id) REFERENCES Meal(id)
+);
+
+
+CREATE TABLE Guest(
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+        nameGuest VARCHAR(255) NOT NULL,
+	surnameGuest VARCHAR(255) NOT NULL,
+	orders int NOT NULL,
+	loyalty BOOL NOT NULL
+);
+
+
+CREATE TABLE Restaurant_Meal(
+	id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	restaurant_id INT NOT NULL,
+	meal_id INT NOT NULL,
+	available BOOL NOT NULL
+);
+
+
+CREATE TABLE Restaurant_Guest (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    restaurant_id INT NOT NULL,
+    guest_id INT NOT NULL,
+    FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id) ON DELETE CASCADE,
+    FOREIGN KEY (guest_id) REFERENCES Guest(id) ON DELETE CASCADE
+);
+
+
+
+CREATE TABLE Restaurant_Reviews (
+    id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    restaurant_id INT NOT NULL,
+	guest_id INT NOT NULL,
+    rating INT NOT NULL, 
+    review_date DATE NOT NULL,
+    FOREIGN KEY (restaurant_id) REFERENCES Restaurant(id) ON DELETE CASCADE,
+	FOREIGN KEY (guest_id) REFERENCES Guest(id) ON DELETE CASCADE
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
